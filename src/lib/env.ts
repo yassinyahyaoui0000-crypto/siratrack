@@ -42,7 +42,19 @@ export function getSupabaseAnonKey() {
 }
 
 export function getSupabaseServiceRoleKey() {
-  return requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const value = getOptionalEnv(
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_SECRET_KEY",
+    "SUPABASE_SECRET_API_KEY",
+  );
+
+  if (!value) {
+    throw new Error(
+      "Missing environment variable: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, or SUPABASE_SECRET_API_KEY",
+    );
+  }
+
+  return value;
 }
 
 export function getOwnerEmail() {

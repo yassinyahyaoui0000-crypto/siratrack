@@ -85,6 +85,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # or
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# or
+SUPABASE_SECRET_KEY=sb_secret_xxx
+# or
+SUPABASE_SECRET_API_KEY=sb_secret_xxx
 OWNER_EMAIL=you@example.com
 APP_TIMEZONE=Africa/Lagos
 ```
@@ -92,7 +96,8 @@ APP_TIMEZONE=Africa/Lagos
 Notes:
 
 - `OWNER_EMAIL` is the only email allowed to create the account.
-- `SUPABASE_SERVICE_ROLE_KEY` is required because owner signup is locked server-side.
+- A server-only elevated Supabase key is required because owner signup is locked server-side.
+- The app accepts either the legacy `SUPABASE_SERVICE_ROLE_KEY` or a modern `SUPABASE_SECRET_KEY` / `SUPABASE_SECRET_API_KEY`.
 - `APP_TIMEZONE` controls what counts as “today”, streak boundaries, and the current week.
 
 ### 5. Run the app locally
@@ -142,7 +147,7 @@ npm run test
 3. Add the same environment variables from `.env.local` to the Vercel project:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY` or `SUPABASE_SECRET_API_KEY`
    - `OWNER_EMAIL`
    - `APP_TIMEZONE`
 4. Deploy.
