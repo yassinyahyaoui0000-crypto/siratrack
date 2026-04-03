@@ -10,27 +10,20 @@ function requireEnv(name: string) {
   return value;
 }
 
-function getOptionalEnv(...names: string[]) {
-  for (const name of names) {
-    const value = process.env[name];
+export function getSupabaseUrl() {
+  const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    if (value) {
-      return value;
-    }
+  if (!value) {
+    throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_URL");
   }
 
-  return null;
-}
-
-export function getSupabaseUrl() {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+  return value;
 }
 
 export function getSupabaseAnonKey() {
-  const value = getOptionalEnv(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY",
-  );
+  const value =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
   if (!value) {
     throw new Error(
@@ -42,11 +35,10 @@ export function getSupabaseAnonKey() {
 }
 
 export function getSupabaseServiceRoleKey() {
-  const value = getOptionalEnv(
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_SECRET_KEY",
-    "SUPABASE_SECRET_API_KEY",
-  );
+  const value =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SECRET_API_KEY;
 
   if (!value) {
     throw new Error(
