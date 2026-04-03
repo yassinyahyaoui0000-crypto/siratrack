@@ -7,6 +7,7 @@ import type {
   AppSettings,
   Project,
   WeeklyCommitment,
+  WeeklyBossBoard,
   WeeklyCommitmentInput,
   WeeklyCommitmentProgress,
 } from "@/lib/types";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 interface WeeklyCommitmentCardProps {
   initialCommitment: WeeklyCommitment | null;
   initialProgress: WeeklyCommitmentProgress | null;
+  weeklyBossBoard: WeeklyBossBoard;
   settings: AppSettings;
   projects: Project[];
 }
@@ -53,6 +55,7 @@ function extractFormValue(
 export function WeeklyCommitmentCard({
   initialCommitment,
   initialProgress,
+  weeklyBossBoard,
   settings,
   projects,
 }: WeeklyCommitmentCardProps) {
@@ -104,30 +107,58 @@ export function WeeklyCommitmentCard({
     <form className="surface p-6" onSubmit={handleSubmit}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="section-label">This Week&apos;s Standard</p>
+          <p className="section-label">Week Boss</p>
           <h3 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-            Commit the numbers before the week drifts.
+            Lock the objectives before the boss fight drifts.
           </h3>
           <p className="mt-2 text-sm text-white/55">
-            Every goal is paced Monday to Sunday. Falling behind turns the week off track.
+            Every metric is paced Monday to Sunday. Clear the board and take the 100 XP reward.
           </p>
         </div>
 
-        {initialProgress ? (
-          <div
-            className={cn(
-              "rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em]",
-              initialProgress.status === "ON TRACK" ? "status-good" : "status-bad",
-            )}
-          >
-            {initialProgress.status}
-          </div>
-        ) : (
-          <div className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-200">
-            Not Set
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="tactical-chip">Reward +{weeklyBossBoard.rewardXp} XP</div>
+          {initialProgress ? (
+            <div
+              className={cn(
+                "rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em]",
+                initialProgress.status === "ON TRACK" ? "status-good" : "status-bad",
+              )}
+            >
+              {initialProgress.status}
+            </div>
+          ) : (
+            <div className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-200">
+              Unset
+            </div>
+          )}
+        </div>
       </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+          <p className="text-sm text-white/45">Primary Project</p>
+          <p className="mt-2 text-lg font-semibold text-white">
+            {weeklyBossBoard.primaryProjectName ?? "No target locked"}
+          </p>
+        </div>
+        <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+          <p className="text-sm text-white/45">Elapsed Days</p>
+          <p className="mt-2 font-mono text-3xl text-white">{weeklyBossBoard.elapsedDays}/7</p>
+        </div>
+        <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+          <p className="text-sm text-white/45">Boss Note</p>
+          <p className="mt-2 text-sm leading-6 text-white/70">
+            {weeklyBossBoard.note || "No command note set for this week."}
+          </p>
+        </div>
+      </div>
+
+      {weeklyBossBoard.warning ? (
+        <div className="mt-4 rounded-[22px] border border-amber-300/20 bg-amber-300/[0.08] px-4 py-3 text-sm text-amber-100">
+          Monday is live and the Week Boss is still unset. Lock the objective before drift starts.
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="space-y-2">
@@ -236,7 +267,7 @@ export function WeeklyCommitmentCard({
 
         <div className="space-y-2">
           <label className="section-label" htmlFor="weekly-project">
-            Primary Project
+            Boss Target
           </label>
           <select
             id="weekly-project"
@@ -261,7 +292,7 @@ export function WeeklyCommitmentCard({
 
       <div className="mt-4 space-y-2">
         <label className="section-label" htmlFor="weekly-note">
-          Commitment Note
+          Command Note
         </label>
         <textarea
           id="weekly-note"
@@ -275,14 +306,17 @@ export function WeeklyCommitmentCard({
           rows={3}
           maxLength={200}
           className="field min-h-24 resize-none"
-          placeholder="What matters most this week?"
+          placeholder="What has to get cleared this week?"
         />
       </div>
 
       {initialProgress ? (
         <div className="mt-6 space-y-3">
           {initialProgress.metrics.map((metric) => (
-            <div key={metric.key} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+            <div
+              key={metric.key}
+              className="rounded-[24px] border border-white/10 bg-black/20 p-4"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-white">{metric.label}</p>
                 <p className="font-mono text-sm text-white/50">
@@ -304,8 +338,8 @@ export function WeeklyCommitmentCard({
                 />
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
-                <span>Expected so far: {metric.expectedSoFar}</span>
-                <span>Remaining gap: {metric.remaining}</span>
+                <span>Pace line: {metric.expectedSoFar}</span>
+                <span>Boss health left: {metric.remaining}</span>
               </div>
             </div>
           ))}

@@ -56,40 +56,40 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
     <div className="surface p-6 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="section-label">Last 30 Days</p>
+          <p className="section-label">Battle Log</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">
-            Confront the last month directly.
+            Review the last thirty days without escape.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
-            Good days, weak days, and missed logs all stay visible. Past days are read-only.
+            Strong days, weak days, and missed logs all remain visible. Past days stay read-only.
           </p>
         </div>
-        <div className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs uppercase tracking-[0.24em] text-white/50">
-          30 Day Window
+        <div className="tactical-chip">
+          30 day record
         </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-white/50">Good Days</p>
+          <p className="text-sm text-white/50">Strong Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.goodDays}</p>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-white/50">Bad Days</p>
+          <p className="text-sm text-white/50">Failed Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.badDays}</p>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-white/50">Missed Days</p>
+          <p className="text-sm text-white/50">Silent Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.missedDays}</p>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-white/50">Longest Full Streak</p>
+          <p className="text-sm text-white/50">Best Chain</p>
           <p className="mt-2 font-mono text-3xl text-white">
             {history.summary.longestFullStreak}
           </p>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-white/50">Most Missed Category</p>
+          <p className="text-sm text-white/50">Weakest Area</p>
           <p className="mt-2 text-lg font-semibold text-white">
             {history.summary.mostMissedCategory
               ? history.summary.mostMissedCategory.label
@@ -134,7 +134,7 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
             <>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="section-label">Selected Day</p>
+                  <p className="section-label">Selected Entry</p>
                   <h3 className="mt-2 text-2xl font-semibold tracking-tight text-white">
                     {selectedDay.date}
                   </h3>
@@ -193,7 +193,7 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
                 </div>
               ) : (
                 <div className="mt-5 rounded-[22px] border border-dashed border-white/10 bg-black/15 p-4 text-sm text-white/60">
-                  No log was saved on this day. The miss stays visible.
+                  No log was saved on this day. The gap stays on the record.
                 </div>
               )}
             </>

@@ -61,6 +61,23 @@ export async function getWeeklyCommitmentForWeek(
   return data ? fromWeeklyCommitmentRow(data) : null;
 }
 
+export async function listWeeklyCommitmentsForUser(
+  client: SupabaseClient,
+  userId: string,
+) {
+  const { data, error } = await client
+    .from("weekly_commitments")
+    .select("*")
+    .eq("user_id", userId)
+    .order("week_start", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => fromWeeklyCommitmentRow(row));
+}
+
 export async function getCurrentWeeklyCommitmentForUser(
   client: SupabaseClient,
   userId: string,

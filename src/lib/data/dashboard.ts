@@ -16,9 +16,20 @@ import { listDailyLogsForUser } from "@/lib/data/daily-logs";
 import { listActiveProjectsForUser } from "@/lib/data/projects";
 import { listRecoveryPlansForUser } from "@/lib/data/recovery-plans";
 import { getSettingsForUser } from "@/lib/data/settings";
-import { getCurrentWeeklyCommitmentForUser } from "@/lib/data/weekly-commitments";
+import {
+  getCurrentWeeklyCommitmentForUser,
+  listWeeklyCommitmentsForUser,
+} from "@/lib/data/weekly-commitments";
 import { getAppTimeZone } from "@/lib/env";
 import { getFeedbackMessage } from "@/lib/feedback";
+import {
+  createAchievementGallery,
+  createDailyMissionBoard,
+  createProgressionSummary,
+  createWeeklyBossBoard,
+  createWeeklyProgressionSummaries,
+  getRecentUnlocks,
+} from "@/lib/progression";
 import {
   applyScoreToLog,
   createEmptyDailyLog,
@@ -524,12 +535,13 @@ export async function getDashboardData(
   userEmail: string,
 ): Promise<DashboardData> {
   const todayDate = getTodayDateString(getAppTimeZone());
-  const [settings, logs, activeProjects, weeklyCommitment, recoveryPlans] =
+  const [settings, logs, activeProjects, weeklyCommitment, weeklyCommitments, recoveryPlans] =
     await Promise.all([
       getSettingsForUser(client, userId),
       listDailyLogsForUser(client, userId),
       listActiveProjectsForUser(client, userId),
       getCurrentWeeklyCommitmentForUser(client, userId, todayDate),
+      listWeeklyCommitmentsForUser(client, userId),
       listRecoveryPlansForUser(client, userId),
     ]);
 
@@ -544,6 +556,40 @@ export async function getDashboardData(
     recoveryPlans,
     todayDate,
   );
+  const weeklyCommitmentProgress = computeWeeklyCommitmentProgress(
+    logs,
+    settings,
+    weeklyCommitment,
+    todayDate,
+  );
+  const weeklyProgressionSummaries = createWeeklyProgressionSummaries(
+    logs,
+    settings,
+    weeklyCommitments,
+    weeklyCommitmentProgress,
+    todayDate,
+  );
+  const achievementGallery = createAchievementGallery(
+    logs,
+    settings,
+    recoveryPlans,
+    weeklyProgressionSummaries,
+  );
+  const recentUnlocks = getRecentUnlocks(achievementGallery);
+  const progressionSummary = createProgressionSummary(
+    logs,
+    settings,
+    weeklyProgressionSummaries,
+    todayDate,
+    achievementGallery.unlockedCount,
+  );
+  const dailyMissionBoard = createDailyMissionBoard(scoredTodayLog, settings);
+  const weeklyBossBoard = createWeeklyBossBoard(
+    todayDate,
+    weeklyCommitment,
+    weeklyCommitmentProgress,
+    activeProjects,
+  );
 
   return {
     userEmail,
@@ -552,12 +598,7 @@ export async function getDashboardData(
     hasTodayLog: Boolean(todayLog),
     weeklyScoreboard: computeWeeklyScoreboard(logs, settings, todayDate),
     weeklyCommitment,
-    weeklyCommitmentProgress: computeWeeklyCommitmentProgress(
-      logs,
-      settings,
-      weeklyCommitment,
-      todayDate,
-    ),
+    weeklyCommitmentProgress,
     habitCompletions: computeHabitCompletions(logs, settings, todayDate),
     streaks,
     feedbackMessage: getFeedbackMessage(
@@ -570,5 +611,10 @@ export async function getDashboardData(
     accountabilityHistory: computeAccountabilityHistory(logs, settings, todayDate),
     activeProjects,
     focusDerivedHours: getFocusDerivedHours(scoredTodayLog.focusSessionsCompleted),
+    progressionSummary,
+    dailyMissionBoard,
+    weeklyBossBoard,
+    achievementGallery,
+    recentUnlocks,
   };
 }
