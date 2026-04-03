@@ -19,46 +19,51 @@ export function SignupForm() {
     setPending(true);
     setError(null);
     setSuccess(null);
+    try {
+      const response = await fetch("/api/auth/register-owner", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
 
-    const response = await fetch("/api/auth/register-owner", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Unable to create the owner account.");
+        return;
+      }
+
+      const supabase = createSupabaseBrowserClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
-      }),
-    });
+      });
 
-    const payload = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
+      if (signInError) {
+        setSuccess("Owner created. Log in with the same credentials.");
+        return;
+      }
 
-    if (!response.ok) {
-      setError(payload?.error ?? "Unable to create the owner account.");
+      startTransition(() => {
+        router.replace("/");
+        router.refresh();
+      });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Signup failed before the request completed.",
+      );
+    } finally {
       setPending(false);
-      return;
     }
-
-    const supabase = createSupabaseBrowserClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (signInError) {
-      setSuccess("Owner created. Log in with the same credentials.");
-      setPending(false);
-      return;
-    }
-
-    startTransition(() => {
-      router.replace("/");
-      router.refresh();
-    });
-
-    setPending(false);
   }
 
   return (

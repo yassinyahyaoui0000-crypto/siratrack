@@ -17,25 +17,31 @@ export function LoginForm() {
     event.preventDefault();
     setPending(true);
     setError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
 
-    if (signInError) {
-      setError(signInError.message);
+      startTransition(() => {
+        router.replace("/");
+        router.refresh();
+      });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Login failed before the request completed.",
+      );
+    } finally {
       setPending(false);
-      return;
     }
-
-    startTransition(() => {
-      router.replace("/");
-      router.refresh();
-    });
-
-    setPending(false);
   }
 
   return (
