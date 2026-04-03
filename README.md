@@ -82,6 +82,8 @@ npm install
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# or
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 OWNER_EMAIL=you@example.com
 APP_TIMEZONE=Africa/Lagos
@@ -139,7 +141,7 @@ npm run test
 2. Import the repo into Vercel.
 3. Add the same environment variables from `.env.local` to the Vercel project:
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `OWNER_EMAIL`
    - `APP_TIMEZONE`

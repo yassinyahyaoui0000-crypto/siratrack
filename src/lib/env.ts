@@ -10,12 +10,35 @@ function requireEnv(name: string) {
   return value;
 }
 
+function getOptionalEnv(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name];
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 export function getSupabaseUrl() {
   return requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 }
 
 export function getSupabaseAnonKey() {
-  return requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const value = getOptionalEnv(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY",
+  );
+
+  if (!value) {
+    throw new Error(
+      "Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY",
+    );
+  }
+
+  return value;
 }
 
 export function getSupabaseServiceRoleKey() {
