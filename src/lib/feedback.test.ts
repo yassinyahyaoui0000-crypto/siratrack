@@ -18,6 +18,12 @@ describe("getFeedbackMessage", () => {
     );
   });
 
+  it("forces the strict line when a recovery plan is still open", () => {
+    expect(getFeedbackMessage(92, false, 8, true)).toBe(
+      "You are falling behind. Fix it tomorrow.",
+    );
+  });
+
   it("returns controlled encouragement for strong days", () => {
     expect(getFeedbackMessage(92, false, 3)).toBe(
       "Good work. Repeat the standard tomorrow.",

@@ -8,11 +8,14 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { AccountabilityBoard } from "@/components/dashboard/accountability-board";
 import { DailyCheckInForm } from "@/components/dashboard/check-in-form";
 import { FocusTimer } from "@/components/dashboard/focus-timer";
+import { RecoveryPlanCard } from "@/components/dashboard/recovery-plan-card";
+import { WeeklyCommitmentCard } from "@/components/dashboard/weekly-commitment-card";
 import { WeeklyScoreChart } from "@/components/dashboard/weekly-score-chart";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { formatLongDateLabel } from "@/lib/date";
+import { formatLongDateLabel, getWeekStartDateString } from "@/lib/date";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +43,9 @@ export default async function DashboardPage() {
 
   const dashboard = await getDashboardData(supabase, user.id, user.email);
   const weekly = dashboard.weeklyScoreboard;
+  const todayDate = dashboard.todayLog.logDate;
+  const showWeeklyWarning =
+    todayDate === getWeekStartDateString(todayDate) && !dashboard.weeklyCommitment;
 
   return (
     <div className="space-y-6">
@@ -118,14 +124,37 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {showWeeklyWarning ? (
+        <div className="rounded-[28px] border border-amber-400/25 bg-amber-400/10 p-5">
+          <p className="section-label !text-amber-200/70">Weekly Warning</p>
+          <p className="mt-2 text-lg font-medium text-white">
+            Monday has started and no weekly standard is locked. Commit the week before it drifts.
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <DailyCheckInForm
+          key={`${dashboard.todayLog.logDate}-${dashboard.todayLog.updatedAt ?? "new"}-${dashboard.todayLog.focusSessionsCompleted}`}
           initialLog={dashboard.todayLog}
           hasTodayLog={dashboard.hasTodayLog}
           settings={dashboard.settings}
+          focusDerivedHours={dashboard.focusDerivedHours}
         />
 
         <div className="space-y-6">
+          {dashboard.activeRecoveryPlan ? (
+            <RecoveryPlanCard plan={dashboard.activeRecoveryPlan} />
+          ) : null}
+
+          <WeeklyCommitmentCard
+            key={dashboard.weeklyCommitment?.updatedAt ?? dashboard.weeklyCommitment?.weekStart ?? `empty-${getWeekStartDateString(todayDate)}`}
+            initialCommitment={dashboard.weeklyCommitment}
+            initialProgress={dashboard.weeklyCommitmentProgress}
+            settings={dashboard.settings}
+            projects={dashboard.activeProjects}
+          />
+
           <div className="surface p-6">
             <p className="section-label">Weekly Scoreboard</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -139,16 +168,16 @@ export default async function DashboardPage() {
                 <p className="text-sm text-white/50">Best Day</p>
                 <p className="mt-2 text-lg font-semibold text-white">
                   {weekly.bestDay
-                    ? `${weekly.bestDay.dayLabel} • ${weekly.bestDay.score}`
-                    : "—"}
+                    ? `${weekly.bestDay.dayLabel} - ${weekly.bestDay.score}`
+                    : "No entry"}
                 </p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
                 <p className="text-sm text-white/50">Worst Day</p>
                 <p className="mt-2 text-lg font-semibold text-white">
                   {weekly.worstDay
-                    ? `${weekly.worstDay.dayLabel} • ${weekly.worstDay.score}`
-                    : "—"}
+                    ? `${weekly.worstDay.dayLabel} - ${weekly.worstDay.score}`
+                    : "No entry"}
                 </p>
               </div>
             </div>
@@ -253,6 +282,11 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <AccountabilityBoard
+        key={dashboard.accountabilityHistory.days.at(-1)?.date ?? "accountability"}
+        history={dashboard.accountabilityHistory}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="surface p-5">

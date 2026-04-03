@@ -1,4 +1,14 @@
 export type DayRating = "GOOD" | "AVERAGE" | "BAD";
+export type WeeklyCommitmentStatus = "ON TRACK" | "OFF TRACK";
+export type RecoveryPlanMissReason =
+  | "planning"
+  | "distraction"
+  | "fatigue"
+  | "avoidance"
+  | "overcommitment"
+  | "other";
+export type RecoveryPlanStatus = "open" | "resolved";
+export type AccountabilityDayStatus = DayRating | "MISSED";
 
 export type PrayerKey =
   | "fajrDone"
@@ -82,6 +92,79 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface WeeklyCommitmentInput {
+  deepWorkHoursGoal: number;
+  codingProblemsGoal: number;
+  learningMinutesGoal: number;
+  workoutDaysGoal: number;
+  fullPrayerDaysGoal: number;
+  primaryProjectId: string | null;
+  commitmentNote: string;
+}
+
+export interface WeeklyCommitment extends WeeklyCommitmentInput {
+  id?: string;
+  userId?: string;
+  weekStart: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WeeklyCommitmentMetricProgress {
+  key:
+    | "deepWorkHours"
+    | "codingProblems"
+    | "learningMinutes"
+    | "workoutDays"
+    | "fullPrayerDays";
+  label: string;
+  goal: number;
+  actual: number;
+  remaining: number;
+  expectedSoFar: number;
+  isOnTrack: boolean;
+  unitLabel: string;
+}
+
+export interface WeeklyCommitmentProgress {
+  weekStart: string;
+  elapsedDays: number;
+  status: WeeklyCommitmentStatus;
+  metrics: WeeklyCommitmentMetricProgress[];
+}
+
+export interface RecoveryPlanInput {
+  triggerDate: string;
+  targetDate: string;
+  missReason: RecoveryPlanMissReason;
+  correctiveAction: string;
+}
+
+export interface RecoveryPlanUpdateInput {
+  missReason?: RecoveryPlanMissReason;
+  correctiveAction?: string;
+}
+
+export interface RecoveryPlan extends RecoveryPlanInput {
+  id: string;
+  userId: string;
+  status: RecoveryPlanStatus;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActiveRecoveryPlan {
+  id?: string;
+  triggerDate: string;
+  targetDate: string;
+  missReason: RecoveryPlanMissReason | null;
+  correctiveAction: string;
+  status: "open";
+  isPersisted: boolean;
+  needsInput: boolean;
+}
+
 export interface DailyScoreResult {
   score: number;
   rating: DayRating;
@@ -121,14 +204,50 @@ export interface StreakSummary {
   missedYesterday: boolean;
 }
 
+export interface AccountabilityDay {
+  date: string;
+  shortDateLabel: string;
+  dayLabel: string;
+  status: AccountabilityDayStatus;
+  score: number | null;
+  dayRating: DayRating | null;
+  isToday: boolean;
+  log: DailyLog | null;
+}
+
+export interface AccountabilityHistorySummary {
+  goodDays: number;
+  badDays: number;
+  missedDays: number;
+  longestFullStreak: number;
+  mostMissedCategory:
+    | {
+        key: HabitKey;
+        label: string;
+        missedCount: number;
+      }
+    | null;
+}
+
+export interface AccountabilityHistory {
+  range: "30d";
+  days: AccountabilityDay[];
+  summary: AccountabilityHistorySummary;
+}
+
 export interface DashboardData {
   userEmail: string;
   settings: AppSettings;
   todayLog: DailyLog;
   hasTodayLog: boolean;
   weeklyScoreboard: WeeklyScoreboard;
+  weeklyCommitment: WeeklyCommitment | null;
+  weeklyCommitmentProgress: WeeklyCommitmentProgress | null;
   habitCompletions: HabitCompletion[];
   streaks: StreakSummary;
   feedbackMessage: string;
+  activeRecoveryPlan: ActiveRecoveryPlan | null;
+  accountabilityHistory: AccountabilityHistory;
   activeProjects: Project[];
+  focusDerivedHours: number;
 }

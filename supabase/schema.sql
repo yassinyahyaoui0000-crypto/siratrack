@@ -56,6 +56,36 @@ create table if not exists public.projects (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.weekly_commitments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  week_start date not null,
+  deep_work_hours_goal numeric(5,1) not null default 0 check (deep_work_hours_goal >= 0),
+  coding_problems_goal integer not null default 0 check (coding_problems_goal >= 0),
+  learning_minutes_goal integer not null default 0 check (learning_minutes_goal >= 0),
+  workout_days_goal integer not null default 0 check (workout_days_goal between 0 and 7),
+  full_prayer_days_goal integer not null default 0 check (full_prayer_days_goal between 0 and 7),
+  primary_project_id uuid references public.projects(id) on delete set null,
+  commitment_note varchar(200),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (user_id, week_start)
+);
+
+create table if not exists public.recovery_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  trigger_date date not null,
+  target_date date not null,
+  miss_reason varchar(20) not null check (miss_reason in ('planning', 'distraction', 'fatigue', 'avoidance', 'overcommitment', 'other')),
+  corrective_action varchar(200) not null,
+  status varchar(12) not null default 'open' check (status in ('open', 'resolved')),
+  resolved_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (user_id, trigger_date)
+);
+
 drop trigger if exists set_app_settings_updated_at on public.app_settings;
 create trigger set_app_settings_updated_at
 before update on public.app_settings
@@ -74,9 +104,23 @@ before update on public.projects
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists set_weekly_commitments_updated_at on public.weekly_commitments;
+create trigger set_weekly_commitments_updated_at
+before update on public.weekly_commitments
+for each row
+execute function public.set_updated_at();
+
+drop trigger if exists set_recovery_plans_updated_at on public.recovery_plans;
+create trigger set_recovery_plans_updated_at
+before update on public.recovery_plans
+for each row
+execute function public.set_updated_at();
+
 alter table public.app_settings enable row level security;
 alter table public.daily_logs enable row level security;
 alter table public.projects enable row level security;
+alter table public.weekly_commitments enable row level security;
+alter table public.recovery_plans enable row level security;
 
 drop policy if exists "Users can read own settings" on public.app_settings;
 create policy "Users can read own settings"
@@ -144,5 +188,55 @@ with check (auth.uid() = user_id);
 drop policy if exists "Users can delete own projects" on public.projects;
 create policy "Users can delete own projects"
 on public.projects
+for delete
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can read own weekly commitments" on public.weekly_commitments;
+create policy "Users can read own weekly commitments"
+on public.weekly_commitments
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own weekly commitments" on public.weekly_commitments;
+create policy "Users can insert own weekly commitments"
+on public.weekly_commitments
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own weekly commitments" on public.weekly_commitments;
+create policy "Users can update own weekly commitments"
+on public.weekly_commitments
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own weekly commitments" on public.weekly_commitments;
+create policy "Users can delete own weekly commitments"
+on public.weekly_commitments
+for delete
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can read own recovery plans" on public.recovery_plans;
+create policy "Users can read own recovery plans"
+on public.recovery_plans
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own recovery plans" on public.recovery_plans;
+create policy "Users can insert own recovery plans"
+on public.recovery_plans
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own recovery plans" on public.recovery_plans;
+create policy "Users can update own recovery plans"
+on public.recovery_plans
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own recovery plans" on public.recovery_plans;
+create policy "Users can delete own recovery plans"
+on public.recovery_plans
 for delete
 using (auth.uid() = user_id);

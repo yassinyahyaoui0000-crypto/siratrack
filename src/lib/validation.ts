@@ -42,3 +42,49 @@ export const projectUpdateSchema = z
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field is required.",
   });
+
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+  message: "Invalid date value.",
+});
+
+export const weeklyCommitmentSchema = z.object({
+  deepWorkHoursGoal: z.number().min(0).max(168),
+  codingProblemsGoal: z.number().int().min(0).max(2000),
+  learningMinutesGoal: z.number().int().min(0).max(10080),
+  workoutDaysGoal: z.number().int().min(0).max(7),
+  fullPrayerDaysGoal: z.number().int().min(0).max(7),
+  primaryProjectId: z.string().uuid().nullable().default(null),
+  commitmentNote: z.string().trim().max(200).default(""),
+});
+
+export const recoveryPlanCreateSchema = z.object({
+  triggerDate: dateStringSchema,
+  targetDate: dateStringSchema,
+  missReason: z.enum([
+    "planning",
+    "distraction",
+    "fatigue",
+    "avoidance",
+    "overcommitment",
+    "other",
+  ]),
+  correctiveAction: z.string().trim().min(3).max(200),
+});
+
+export const recoveryPlanUpdateSchema = z
+  .object({
+    missReason: z
+      .enum([
+        "planning",
+        "distraction",
+        "fatigue",
+        "avoidance",
+        "overcommitment",
+        "other",
+      ])
+      .optional(),
+    correctiveAction: z.string().trim().min(3).max(200).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field is required.",
+  });

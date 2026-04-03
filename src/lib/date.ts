@@ -15,12 +15,35 @@ export function getYesterdayDateString(dateString: string) {
   return format(subDays(parseISO(dateString), 1), DATE_FORMAT);
 }
 
+export function getTomorrowDateString(dateString: string) {
+  return format(addDays(parseISO(dateString), 1), DATE_FORMAT);
+}
+
+export function getWeekStartDateString(dateString: string) {
+  return format(
+    startOfWeek(parseISO(dateString), { weekStartsOn: 1 }),
+    DATE_FORMAT,
+  );
+}
+
 export function getCurrentWeekDates(dateString: string) {
-  const start = startOfWeek(parseISO(dateString), { weekStartsOn: 1 });
+  const start = parseISO(getWeekStartDateString(dateString));
 
   return Array.from({ length: 7 }, (_, index) =>
     format(addDays(start, index), DATE_FORMAT),
   );
+}
+
+export function getRollingDateRange(dateString: string, totalDays: number) {
+  const start = subDays(parseISO(dateString), totalDays - 1);
+
+  return Array.from({ length: totalDays }, (_, index) =>
+    format(addDays(start, index), DATE_FORMAT),
+  );
+}
+
+export function getElapsedWeekDays(dateString: string) {
+  return getCurrentWeekDates(dateString).filter((date) => date <= dateString).length;
 }
 
 export function shiftDateString(dateString: string, amount: number) {

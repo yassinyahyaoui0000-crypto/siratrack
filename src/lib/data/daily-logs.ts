@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getTodayDateString } from "@/lib/date";
+import { resolveOpenRecoveryPlansIfEligible } from "@/lib/data/recovery-plans";
 import { getSettingsForUser } from "@/lib/data/settings";
 import { getAppTimeZone } from "@/lib/env";
 import {
@@ -134,7 +135,10 @@ export async function saveDailyLogForToday(
     throw new Error(error.message);
   }
 
-  return fromDailyLogRow(data);
+  const savedLog = fromDailyLogRow(data);
+  await resolveOpenRecoveryPlansIfEligible(client, userId, savedLog);
+
+  return savedLog;
 }
 
 export async function incrementFocusSessionsForToday(
@@ -164,7 +168,10 @@ export async function incrementFocusSessionsForToday(
     throw new Error(error.message);
   }
 
-  return fromDailyLogRow(data);
+  const savedLog = fromDailyLogRow(data);
+  await resolveOpenRecoveryPlansIfEligible(client, userId, savedLog);
+
+  return savedLog;
 }
 
 export async function recomputeDailyLogScores(

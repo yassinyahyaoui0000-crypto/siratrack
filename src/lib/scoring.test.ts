@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_SETTINGS } from "@/lib/constants";
-import { calculateDailyScore, createEmptyDailyLog } from "@/lib/scoring";
+import {
+  calculateDailyScore,
+  canResolveRecoveryPlan,
+  createEmptyDailyLog,
+  getFocusDerivedHours,
+  shouldTriggerRecoveryPlan,
+} from "@/lib/scoring";
 
 describe("calculateDailyScore", () => {
   it("scores an under-target day proportionally", () => {
@@ -87,5 +93,45 @@ describe("calculateDailyScore", () => {
     expect(result.score).toBe(94);
     expect(result.fullCompletion).toBe(false);
     expect(result.completedPrayers).toBe(3);
+  });
+
+  it("flags recovery when a required standard is missed", () => {
+    const log = {
+      ...createEmptyDailyLog("2026-04-03"),
+      deepWorkHours: 4,
+      codingProblemsSolved: 3,
+      learningMinutes: 0,
+      projectWorkDone: true,
+      workoutDone: true,
+      fajrDone: true,
+      dhuhrDone: true,
+      asrDone: true,
+      maghribDone: true,
+      ishaDone: true,
+    };
+
+    expect(shouldTriggerRecoveryPlan(log, DEFAULT_SETTINGS)).toBe(true);
+  });
+
+  it("resolves recovery only on a saved day with score and reflection", () => {
+    const strongDay = {
+      ...createEmptyDailyLog("2026-04-03"),
+      deepWorkHours: 4,
+      codingProblemsSolved: 3,
+      learningMinutes: 60,
+      projectWorkDone: true,
+      workoutDone: true,
+      fajrDone: true,
+      dhuhrDone: true,
+      asrDone: true,
+      maghribDone: true,
+      ishaDone: true,
+      reflection: "Recovered properly.",
+      dailyScore: 100,
+      dayRating: "GOOD" as const,
+    };
+
+    expect(canResolveRecoveryPlan(strongDay)).toBe(true);
+    expect(getFocusDerivedHours(3)).toBe(1.3);
   });
 });

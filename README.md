@@ -1,6 +1,6 @@
 # SiraTrack
 
-SiraTrack is a private, single-user discipline dashboard built for strict daily accountability. It tracks deep work, coding, project effort, learning, workouts, prayers, focus sessions, streaks, and weekly scoring without social features or soft gamification.
+SiraTrack is a private, single-user discipline dashboard built for strict daily accountability. It tracks deep work, coding, project effort, learning, workouts, prayers, focus sessions, streaks, weekly commitments, recovery plans, and a 30-day accountability board without social features or soft gamification.
 
 ## Stack
 
@@ -24,9 +24,13 @@ src/
       auth/login/page.tsx
       auth/signup/page.tsx
     api/
+      accountability-history/route.ts
       auth/register-owner/route.ts
       check-in/route.ts
+      recovery-plan/route.ts
+      recovery-plan/[id]/route.ts
       settings/route.ts
+      weekly-commitment/route.ts
       weekly-scoreboard/route.ts
       projects/route.ts
       projects/[id]/route.ts
@@ -67,6 +71,8 @@ npm install
 1. Create a new Supabase project.
 2. Open the SQL editor.
 3. Run the contents of [`supabase/schema.sql`](./supabase/schema.sql).
+4. If you already deployed an older version, re-run the schema so the new
+   `weekly_commitments` and `recovery_plans` tables exist.
 
 ### 3. Enable email/password auth
 
@@ -98,7 +104,7 @@ Notes:
 - `OWNER_EMAIL` is the only email allowed to create the account.
 - A server-only elevated Supabase key is required because owner signup is locked server-side.
 - The app accepts either the legacy `SUPABASE_SERVICE_ROLE_KEY` or a modern `SUPABASE_SECRET_KEY` / `SUPABASE_SECRET_API_KEY`.
-- `APP_TIMEZONE` controls what counts as “today”, streak boundaries, and the current week.
+- `APP_TIMEZONE` controls what counts as "today", streak boundaries, and the current week.
 
 ### 5. Run the app locally
 
@@ -127,6 +133,9 @@ The signup route will reject:
 - Full streak requires meeting all configured standards.
 - Partial streak requires a score of at least 60.
 - Weekly stats are calculated from the current week.
+- Weekly commitments pace the current Monday-Sunday week and mark it on or off track.
+- Saved misses can require a recovery response before the app lets them fade into the past.
+- The 30-day accountability board keeps missed days and weak patterns visible in read-only history.
 - Settings updates recalculate saved daily scores so analytics stay consistent.
 
 ## Scripts
@@ -168,6 +177,9 @@ The automated tests cover:
 - score calculation
 - feedback tone selection
 - streak behavior
+- weekly commitment pacing
+- recovery trigger and resolution rules
+- 30-day accountability summaries
 - owner signup restrictions
 - protected check-in route behavior
 - CSV export headers
@@ -178,4 +190,7 @@ Manual checks still recommended:
 - dashboard save/update flow
 - focus timer session increment
 - project create/update flow
+- weekly commitment save/update flow
+- recovery plan create/update flow
+- 30-day accountability board review
 - settings save and score recalculation

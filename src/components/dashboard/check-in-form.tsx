@@ -2,7 +2,7 @@
 
 import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useState } from "react";
 
 import { PRAYER_FIELDS } from "@/lib/constants";
 import { calculateDailyScore } from "@/lib/scoring";
@@ -13,6 +13,7 @@ interface DailyCheckInFormProps {
   initialLog: DailyLog;
   hasTodayLog: boolean;
   settings: AppSettings;
+  focusDerivedHours: number;
 }
 
 function extractInput(log: DailyLog): DailyLogInput {
@@ -48,18 +49,19 @@ export function DailyCheckInForm({
   initialLog,
   hasTodayLog,
   settings,
+  focusDerivedHours,
 }: DailyCheckInFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<DailyLogInput>(extractInput(initialLog));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    setForm(extractInput(initialLog));
-  }, [initialLog]);
+  const [hasAppliedFocusSuggestion, setHasAppliedFocusSuggestion] = useState(false);
 
   const preview = calculateDailyScore(form, settings);
+  const focusMinutes = initialLog.focusSessionsCompleted * 25;
+  const focusHoursLabel = Math.floor(focusMinutes / 60);
+  const focusMinutesLabel = focusMinutes % 60;
 
   function setNumberField(
     key: "deepWorkHours" | "codingProblemsSolved" | "learningMinutes",
@@ -99,12 +101,12 @@ export function DailyCheckInForm({
       | null;
 
     if (!response.ok) {
-      setError(payload?.error ?? "Unable to save today’s log.");
+      setError(payload?.error ?? "Unable to save today's log.");
       setPending(false);
       return;
     }
 
-    setSuccess("Today’s check-in is saved.");
+    setSuccess("Today's check-in is saved.");
     startTransition(() => {
       router.refresh();
     });
@@ -115,7 +117,7 @@ export function DailyCheckInForm({
     <form className="surface p-6 sm:p-7" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="section-label">Today’s Check-In</p>
+          <p className="section-label">Today&apos;s Check-In</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">
             Log the day honestly.
           </h2>
@@ -161,6 +163,25 @@ export function DailyCheckInForm({
             onChange={(event) => setNumberField("deepWorkHours", event.target.value)}
             className="field"
           />
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
+            <span>
+              Focus timer recorded {focusHoursLabel}h {focusMinutesLabel}m today
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setForm((current) => ({
+                  ...current,
+                  deepWorkHours: focusDerivedHours,
+                }));
+                setHasAppliedFocusSuggestion(true);
+              }}
+              disabled={focusMinutes === 0}
+              className="action-button-secondary !rounded-full !px-3 !py-1.5 !text-xs"
+            >
+              {hasAppliedFocusSuggestion ? "Applied" : "Use focus time"}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">

@@ -138,3 +138,27 @@ export function getHabitCompletionState(
     prayersCount: completedPrayers,
   };
 }
+
+export function doesLogMissRequiredStandard(
+  log: DailyLog | DailyLogInput,
+  settings: AppSettings = DEFAULT_SETTINGS,
+) {
+  return !calculateDailyScore(log, settings).fullCompletion;
+}
+
+export function shouldTriggerRecoveryPlan(
+  log: DailyLog | DailyLogInput,
+  settings: AppSettings = DEFAULT_SETTINGS,
+) {
+  const result = calculateDailyScore(log, settings);
+
+  return result.score < 60 || !result.fullCompletion;
+}
+
+export function canResolveRecoveryPlan(log: DailyLog) {
+  return log.dailyScore >= 60 && log.reflection.trim().length > 0;
+}
+
+export function getFocusDerivedHours(completedSessions: number) {
+  return Number(((completedSessions * 25) / 60).toFixed(1));
+}

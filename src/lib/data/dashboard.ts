@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { HABIT_LABELS } from "@/lib/constants";
 import {
   formatDayLabel,
   formatShortDateLabel,
   getCurrentWeekDates,
+  getElapsedWeekDays,
+  getRollingDateRange,
   getTodayDateString,
   getYesterdayDateString,
   isFutureDate,
@@ -11,22 +14,39 @@ import {
 } from "@/lib/date";
 import { listDailyLogsForUser } from "@/lib/data/daily-logs";
 import { listActiveProjectsForUser } from "@/lib/data/projects";
+import { listRecoveryPlansForUser } from "@/lib/data/recovery-plans";
 import { getSettingsForUser } from "@/lib/data/settings";
+import { getCurrentWeeklyCommitmentForUser } from "@/lib/data/weekly-commitments";
 import { getAppTimeZone } from "@/lib/env";
 import { getFeedbackMessage } from "@/lib/feedback";
-import { applyScoreToLog, createEmptyDailyLog, getHabitCompletionState } from "@/lib/scoring";
+import {
+  applyScoreToLog,
+  createEmptyDailyLog,
+  getFocusDerivedHours,
+  getHabitCompletionState,
+  shouldTriggerRecoveryPlan,
+} from "@/lib/scoring";
 import type {
+  AccountabilityHistory,
+  ActiveRecoveryPlan,
   AppSettings,
   DailyLog,
   DashboardData,
   HabitCompletion,
+  RecoveryPlan,
   StreakSummary,
+  WeeklyCommitment,
+  WeeklyCommitmentProgress,
   WeeklyScoreEntry,
   WeeklyScoreboard,
 } from "@/lib/types";
 
 function createLogMap(logs: DailyLog[], settings: AppSettings) {
   return new Map(logs.map((log) => [log.logDate, applyScoreToLog(log, settings)]));
+}
+
+function getScoredLogs(logs: DailyLog[], settings: AppSettings) {
+  return logs.map((log) => applyScoreToLog(log, settings));
 }
 
 export function computeWeeklyScoreboard(
@@ -77,6 +97,97 @@ export function computeWeeklyScoreboard(
     worstDay,
     entries,
   };
+}
+
+export function computeWeeklyCommitmentProgress(
+  logs: DailyLog[],
+  settings: AppSettings,
+  commitment: WeeklyCommitment | null,
+  todayDate: string,
+) {
+  if (!commitment) {
+    return null;
+  }
+
+  const weekDates = getCurrentWeekDates(todayDate).filter((date) => date <= todayDate);
+  const logMap = createLogMap(logs, settings);
+  const elapsedDays = getElapsedWeekDays(todayDate);
+  const totals = {
+    deepWorkHours: 0,
+    codingProblems: 0,
+    learningMinutes: 0,
+    workoutDays: 0,
+    fullPrayerDays: 0,
+  };
+
+  for (const date of weekDates) {
+    const log = logMap.get(date);
+
+    if (!log) {
+      continue;
+    }
+
+    const habitState = getHabitCompletionState(log, settings);
+    totals.deepWorkHours += log.deepWorkHours;
+    totals.codingProblems += log.codingProblemsSolved;
+    totals.learningMinutes += log.learningMinutes;
+    totals.workoutDays += Number(log.workoutDone);
+    totals.fullPrayerDays += Number(habitState.prayersComplete);
+  }
+
+  const metrics = [
+    {
+      key: "deepWorkHours" as const,
+      label: "Deep Work",
+      goal: commitment.deepWorkHoursGoal,
+      actual: Number(totals.deepWorkHours.toFixed(1)),
+      unitLabel: "hrs",
+    },
+    {
+      key: "codingProblems" as const,
+      label: "Coding",
+      goal: commitment.codingProblemsGoal,
+      actual: totals.codingProblems,
+      unitLabel: "problems",
+    },
+    {
+      key: "learningMinutes" as const,
+      label: "Learning",
+      goal: commitment.learningMinutesGoal,
+      actual: totals.learningMinutes,
+      unitLabel: "min",
+    },
+    {
+      key: "workoutDays" as const,
+      label: "Workout Days",
+      goal: commitment.workoutDaysGoal,
+      actual: totals.workoutDays,
+      unitLabel: "days",
+    },
+    {
+      key: "fullPrayerDays" as const,
+      label: "Full Prayer Days",
+      goal: commitment.fullPrayerDaysGoal,
+      actual: totals.fullPrayerDays,
+      unitLabel: "days",
+    },
+  ].map((metric) => {
+    const expectedSoFar = Math.ceil((metric.goal * elapsedDays) / 7);
+
+    return {
+      ...metric,
+      expectedSoFar,
+      remaining: Math.max(metric.goal - metric.actual, 0),
+      isOnTrack: metric.actual >= expectedSoFar,
+    };
+  }) satisfies WeeklyCommitmentProgress["metrics"];
+
+  return {
+    weekStart: commitment.weekStart,
+    elapsedDays,
+    status: metrics.every((metric) => metric.isOnTrack) ? "ON TRACK" : "OFF TRACK",
+    metrics,
+  } satisfies WeeklyCommitmentProgress;
 }
 
 export function computeHabitCompletions(
@@ -197,16 +308,7 @@ export function computeStreaks(
       break;
     }
 
-    const status = getHabitCompletionState(log, settings);
-    const fullForDay =
-      status.deepWork &&
-      status.coding &&
-      status.learning &&
-      (!settings.requireProjectWork || log.projectWorkDone) &&
-      (!settings.requireWorkout || log.workoutDone) &&
-      (!settings.requireAllPrayers || status.prayersComplete);
-
-    if (!fullForDay) {
+    if (shouldTriggerRecoveryPlan(log, settings)) {
       break;
     }
 
@@ -219,16 +321,7 @@ export function computeStreaks(
       partial += 1;
     }
 
-    const todayStatus = getHabitCompletionState(todayLog, settings);
-    const todayFull =
-      todayStatus.deepWork &&
-      todayStatus.coding &&
-      todayStatus.learning &&
-      (!settings.requireProjectWork || todayLog.projectWorkDone) &&
-      (!settings.requireWorkout || todayLog.workoutDone) &&
-      (!settings.requireAllPrayers || todayStatus.prayersComplete);
-
-    if (todayFull) {
+    if (!shouldTriggerRecoveryPlan(todayLog, settings)) {
       full += 1;
     }
   }
@@ -236,23 +329,221 @@ export function computeStreaks(
   return { full, partial, missedYesterday };
 }
 
+function createActiveRecoveryPlanFromRow(plan: RecoveryPlan): ActiveRecoveryPlan {
+  return {
+    id: plan.id,
+    triggerDate: plan.triggerDate,
+    targetDate: plan.targetDate,
+    missReason: plan.missReason,
+    correctiveAction: plan.correctiveAction,
+    status: "open",
+    isPersisted: true,
+    needsInput: false,
+  };
+}
+
+export function computeActiveRecoveryPlan(
+  logs: DailyLog[],
+  settings: AppSettings,
+  recoveryPlans: RecoveryPlan[],
+  todayDate: string,
+) {
+  const openPlan = recoveryPlans.find((plan) => plan.status === "open");
+
+  if (openPlan) {
+    return createActiveRecoveryPlanFromRow(openPlan);
+  }
+
+  const plansByTriggerDate = new Set(recoveryPlans.map((plan) => plan.triggerDate));
+  const scoredLogs = getScoredLogs(logs, settings)
+    .filter((log) => log.logDate < todayDate)
+    .sort((left, right) => right.logDate.localeCompare(left.logDate));
+
+  for (const log of scoredLogs) {
+    const needsRecovery = shouldTriggerRecoveryPlan(log, settings);
+
+    if (!needsRecovery || plansByTriggerDate.has(log.logDate)) {
+      continue;
+    }
+
+    return {
+      triggerDate: log.logDate,
+      targetDate: shiftDateString(log.logDate, 1),
+      missReason: null,
+      correctiveAction: "",
+      status: "open",
+      isPersisted: false,
+      needsInput: true,
+    } satisfies ActiveRecoveryPlan;
+  }
+
+  return null;
+}
+
+export function computeAccountabilityHistory(
+  logs: DailyLog[],
+  settings: AppSettings,
+  todayDate: string,
+) {
+  const dates = getRollingDateRange(todayDate, 30);
+  const logMap = createLogMap(logs, settings);
+  const missedCounts = {
+    deepWork: 0,
+    coding: 0,
+    building: 0,
+    learning: 0,
+    workout: 0,
+    prayers: 0,
+  };
+  let goodDays = 0;
+  let badDays = 0;
+  let missedDays = 0;
+  let longestFullStreak = 0;
+  let currentFullStreak = 0;
+
+  const days = dates.map((date) => {
+    const log = logMap.get(date) ?? null;
+
+    if (!log) {
+      currentFullStreak = 0;
+      missedDays += 1;
+
+      return {
+        date,
+        shortDateLabel: formatShortDateLabel(date),
+        dayLabel: formatDayLabel(date),
+        status: "MISSED" as const,
+        score: null,
+        dayRating: null,
+        isToday: date === todayDate,
+        log: null,
+      };
+    }
+
+    const habitState = getHabitCompletionState(log, settings);
+
+    if (!habitState.deepWork) {
+      missedCounts.deepWork += 1;
+    }
+
+    if (!habitState.coding) {
+      missedCounts.coding += 1;
+    }
+
+    if (!habitState.building) {
+      missedCounts.building += 1;
+    }
+
+    if (!habitState.learning) {
+      missedCounts.learning += 1;
+    }
+
+    if (!habitState.workout) {
+      missedCounts.workout += 1;
+    }
+
+    if (!habitState.prayersComplete) {
+      missedCounts.prayers += 1;
+    }
+
+    if (log.dayRating === "GOOD") {
+      goodDays += 1;
+    }
+
+    if (log.dayRating === "BAD") {
+      badDays += 1;
+    }
+
+    if (shouldTriggerRecoveryPlan(log, settings)) {
+      currentFullStreak = 0;
+    } else {
+      currentFullStreak += 1;
+      longestFullStreak = Math.max(longestFullStreak, currentFullStreak);
+    }
+
+    return {
+      date,
+      shortDateLabel: formatShortDateLabel(date),
+      dayLabel: formatDayLabel(date),
+      status: log.dayRating,
+      score: log.dailyScore,
+      dayRating: log.dayRating,
+      isToday: date === todayDate,
+      log,
+    };
+  });
+
+  const mostMissedCategoryEntry = (
+    [
+      "deepWork",
+      "coding",
+      "building",
+      "learning",
+      "workout",
+      "prayers",
+    ] as const
+  ).reduce<{
+    key: keyof typeof missedCounts;
+    missedCount: number;
+  } | null>((current, key) => {
+    const next = {
+      key,
+      missedCount: missedCounts[key],
+    };
+
+    if (!current || next.missedCount > current.missedCount) {
+      return next;
+    }
+
+    return current;
+  }, null);
+
+  return {
+    range: "30d",
+    days,
+    summary: {
+      goodDays,
+      badDays,
+      missedDays,
+      longestFullStreak,
+      mostMissedCategory:
+        mostMissedCategoryEntry && mostMissedCategoryEntry.missedCount > 0
+          ? {
+              key: mostMissedCategoryEntry.key,
+              label: HABIT_LABELS[mostMissedCategoryEntry.key],
+              missedCount: mostMissedCategoryEntry.missedCount,
+            }
+          : null,
+    },
+  } satisfies AccountabilityHistory;
+}
+
 export async function getDashboardData(
   client: SupabaseClient,
   userId: string,
   userEmail: string,
 ): Promise<DashboardData> {
-  const settings = await getSettingsForUser(client, userId);
-  const [logs, activeProjects] = await Promise.all([
-    listDailyLogsForUser(client, userId),
-    listActiveProjectsForUser(client, userId),
-  ]);
-
   const todayDate = getTodayDateString(getAppTimeZone());
+  const [settings, logs, activeProjects, weeklyCommitment, recoveryPlans] =
+    await Promise.all([
+      getSettingsForUser(client, userId),
+      listDailyLogsForUser(client, userId),
+      listActiveProjectsForUser(client, userId),
+      getCurrentWeeklyCommitmentForUser(client, userId, todayDate),
+      listRecoveryPlansForUser(client, userId),
+    ]);
+
   const todayLog = logs.find((log) => log.logDate === todayDate) ?? null;
   const scoredTodayLog = todayLog
     ? applyScoreToLog(todayLog, settings)
     : createEmptyDailyLog(todayDate);
   const streaks = computeStreaks(logs, settings, todayDate);
+  const activeRecoveryPlan = computeActiveRecoveryPlan(
+    logs,
+    settings,
+    recoveryPlans,
+    todayDate,
+  );
 
   return {
     userEmail,
@@ -260,13 +551,24 @@ export async function getDashboardData(
     todayLog: scoredTodayLog,
     hasTodayLog: Boolean(todayLog),
     weeklyScoreboard: computeWeeklyScoreboard(logs, settings, todayDate),
+    weeklyCommitment,
+    weeklyCommitmentProgress: computeWeeklyCommitmentProgress(
+      logs,
+      settings,
+      weeklyCommitment,
+      todayDate,
+    ),
     habitCompletions: computeHabitCompletions(logs, settings, todayDate),
     streaks,
     feedbackMessage: getFeedbackMessage(
       todayLog ? scoredTodayLog.dailyScore : null,
       streaks.missedYesterday,
       streaks.full,
+      Boolean(activeRecoveryPlan),
     ),
+    activeRecoveryPlan,
+    accountabilityHistory: computeAccountabilityHistory(logs, settings, todayDate),
     activeProjects,
+    focusDerivedHours: getFocusDerivedHours(scoredTodayLog.focusSessionsCompleted),
   };
 }

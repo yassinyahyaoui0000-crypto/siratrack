@@ -2,8 +2,9 @@ export function getFeedbackMessage(
   score: number | null,
   missedYesterday: boolean,
   fullStreak: number,
+  hasUnresolvedRecovery = false,
 ) {
-  if (missedYesterday || (score !== null && score < 60)) {
+  if (hasUnresolvedRecovery || missedYesterday || (score !== null && score < 60)) {
     return "You are falling behind. Fix it tomorrow.";
   }
 
