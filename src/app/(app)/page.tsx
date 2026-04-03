@@ -1,35 +1,16 @@
-import {
-  BookOpen,
-  Code2,
-  Dumbbell,
-  Flame,
-  FolderKanban,
-  ShieldAlert,
-  ShieldCheck,
-} from "lucide-react";
+import { Activity, FolderKanban, Orbit, Swords, Zap } from "lucide-react";
 
+import { AchievementGallery } from "@/components/dashboard/achievement-gallery";
 import { AccountabilityBoard } from "@/components/dashboard/accountability-board";
 import { DailyCheckInForm } from "@/components/dashboard/check-in-form";
 import { FocusTimer } from "@/components/dashboard/focus-timer";
+import { MissionBoard } from "@/components/dashboard/mission-board";
+import { ProgressionHud } from "@/components/dashboard/progression-hud";
 import { RecoveryPlanCard } from "@/components/dashboard/recovery-plan-card";
 import { WeeklyCommitmentCard } from "@/components/dashboard/weekly-commitment-card";
 import { WeeklyScoreChart } from "@/components/dashboard/weekly-score-chart";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { formatLongDateLabel, getWeekStartDateString } from "@/lib/date";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
-
-function ratingClassName(rating: "GOOD" | "AVERAGE" | "BAD") {
-  if (rating === "GOOD") {
-    return "status-good";
-  }
-
-  if (rating === "AVERAGE") {
-    return "status-average";
-  }
-
-  return "status-bad";
-}
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -43,97 +24,22 @@ export default async function DashboardPage() {
 
   const dashboard = await getDashboardData(supabase, user.id, user.email);
   const weekly = dashboard.weeklyScoreboard;
-  const todayDate = dashboard.todayLog.logDate;
-  const showWeeklyWarning =
-    todayDate === getWeekStartDateString(todayDate) && !dashboard.weeklyCommitment;
 
   return (
     <div className="space-y-6">
-      <section className="surface overflow-hidden p-6 sm:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-          <div className="space-y-4">
-            <div>
-              <p className="section-label">Daily Review</p>
-              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                {formatLongDateLabel(dashboard.todayLog.logDate)}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
-                Measure the day, protect the streak, and remove excuses before tomorrow begins.
-              </p>
-            </div>
+      <ProgressionHud
+        progression={dashboard.progressionSummary}
+        streaks={dashboard.streaks}
+        todayScore={dashboard.todayLog.dailyScore}
+        todayRating={dashboard.todayLog.dayRating}
+        recentUnlocks={dashboard.recentUnlocks}
+      />
 
-            <div
-              className={cn(
-                "rounded-[28px] border px-5 py-5",
-                dashboard.todayLog.dailyScore >= 85
-                  ? "border-emerald-400/20 bg-emerald-400/10"
-                  : dashboard.todayLog.dailyScore >= 60
-                    ? "border-amber-400/20 bg-amber-400/10"
-                    : "border-rose-400/20 bg-rose-400/10",
-              )}
-            >
-              <div className="flex items-start gap-4">
-                {dashboard.todayLog.dailyScore >= 85 ? (
-                  <ShieldCheck className="mt-1 size-5 text-emerald-300" />
-                ) : (
-                  <ShieldAlert className="mt-1 size-5 text-rose-300" />
-                )}
-                <div>
-                  <p className="section-label !text-current/70">Honest Feedback</p>
-                  <p className="mt-2 text-lg font-medium text-white">
-                    {dashboard.feedbackMessage}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-              <p className="section-label">Today Score</p>
-              <p className="mt-3 font-mono text-5xl font-semibold text-white">
-                {dashboard.todayLog.dailyScore}
-              </p>
-              <div
-                className={cn(
-                  "mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em]",
-                  ratingClassName(dashboard.todayLog.dayRating),
-                )}
-              >
-                {dashboard.todayLog.dayRating}
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-              <p className="section-label">Full Streak</p>
-              <p className="mt-3 flex items-center gap-3 font-mono text-5xl font-semibold text-white">
-                <Flame className="size-8 text-amber-300" />
-                {dashboard.streaks.full}
-              </p>
-              <p className="mt-4 text-sm text-white/50">Days meeting the full standard.</p>
-            </div>
-
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-              <p className="section-label">Partial Streak</p>
-              <p className="mt-3 font-mono text-5xl font-semibold text-white">
-                {dashboard.streaks.partial}
-              </p>
-              <p className="mt-4 text-sm text-white/50">Days staying at 60 or higher.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {showWeeklyWarning ? (
-        <div className="rounded-[28px] border border-amber-400/25 bg-amber-400/10 p-5">
-          <p className="section-label !text-amber-200/70">Weekly Warning</p>
-          <p className="mt-2 text-lg font-medium text-white">
-            Monday has started and no weekly standard is locked. Commit the week before it drifts.
-          </p>
-        </div>
+      {dashboard.activeRecoveryPlan ? (
+        <RecoveryPlanCard plan={dashboard.activeRecoveryPlan} />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <DailyCheckInForm
           key={`${dashboard.todayLog.logDate}-${dashboard.todayLog.updatedAt ?? "new"}-${dashboard.todayLog.focusSessionsCompleted}`}
           initialLog={dashboard.todayLog}
@@ -143,29 +49,41 @@ export default async function DashboardPage() {
         />
 
         <div className="space-y-6">
-          {dashboard.activeRecoveryPlan ? (
-            <RecoveryPlanCard plan={dashboard.activeRecoveryPlan} />
-          ) : null}
+          <MissionBoard board={dashboard.dailyMissionBoard} />
 
           <WeeklyCommitmentCard
-            key={dashboard.weeklyCommitment?.updatedAt ?? dashboard.weeklyCommitment?.weekStart ?? `empty-${getWeekStartDateString(todayDate)}`}
+            key={dashboard.weeklyCommitment?.updatedAt ?? dashboard.weeklyCommitment?.weekStart ?? `boss-${dashboard.weeklyBossBoard.weekStart}`}
             initialCommitment={dashboard.weeklyCommitment}
             initialProgress={dashboard.weeklyCommitmentProgress}
+            weeklyBossBoard={dashboard.weeklyBossBoard}
             settings={dashboard.settings}
             projects={dashboard.activeProjects}
           />
 
           <div className="surface p-6">
-            <p className="section-label">Weekly Scoreboard</p>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="section-label">Field Scan</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                  Current week pressure map.
+                </h2>
+              </div>
+              <div className="tactical-chip">Week average {weekly.averageScore}</div>
+            </div>
+
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/50">Average</p>
-                <p className="mt-2 font-mono text-3xl text-white">
-                  {weekly.averageScore}
-                </p>
+                <div className="flex items-center gap-2 text-sm text-white/50">
+                  <Activity className="size-4 text-cyan-300" />
+                  Average
+                </div>
+                <p className="mt-2 font-mono text-3xl text-white">{weekly.averageScore}</p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/50">Best Day</p>
+                <div className="flex items-center gap-2 text-sm text-white/50">
+                  <Zap className="size-4 text-emerald-300" />
+                  Best Hit
+                </div>
                 <p className="mt-2 text-lg font-semibold text-white">
                   {weekly.bestDay
                     ? `${weekly.bestDay.dayLabel} - ${weekly.bestDay.score}`
@@ -173,7 +91,10 @@ export default async function DashboardPage() {
                 </p>
               </div>
               <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/50">Worst Day</p>
+                <div className="flex items-center gap-2 text-sm text-white/50">
+                  <Swords className="size-4 text-rose-300" />
+                  Weakest Day
+                </div>
                 <p className="mt-2 text-lg font-semibold text-white">
                   {weekly.worstDay
                     ? `${weekly.worstDay.dayLabel} - ${weekly.worstDay.score}`
@@ -184,28 +105,6 @@ export default async function DashboardPage() {
 
             <div className="mt-6">
               <WeeklyScoreChart entries={weekly.entries} />
-            </div>
-          </div>
-
-          <div className="surface p-6">
-            <p className="section-label">Habit Completion</p>
-            <div className="mt-5 space-y-4">
-              {dashboard.habitCompletions.map((habit) => (
-                <div key={habit.key} className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-white">{habit.label}</p>
-                    <p className="font-mono text-sm text-white/55">
-                      {habit.completedUnits}/{habit.totalUnits}
-                    </p>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/8">
-                    <div
-                      className="h-full rounded-full bg-amber-400 transition-[width]"
-                      style={{ width: `${habit.completionPercent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -219,7 +118,7 @@ export default async function DashboardPage() {
             <div>
               <p className="section-label">Active Projects</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                Current builds that still need effort.
+                Builds still inside the arena.
               </h2>
             </div>
             <a href="/projects" className="action-button-secondary">
@@ -227,26 +126,26 @@ export default async function DashboardPage() {
             </a>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-[26px] border border-white/10 bg-black/20 p-5">
               <FolderKanban className="size-5 text-amber-300" />
-              <p className="mt-4 text-sm text-white/50">Active Projects</p>
+              <p className="mt-4 text-sm text-white/50">Active Builds</p>
               <p className="mt-2 font-mono text-4xl text-white">
                 {dashboard.activeProjects.length}
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-              <Code2 className="size-5 text-amber-300" />
-              <p className="mt-4 text-sm text-white/50">Coding Target</p>
+            <div className="rounded-[26px] border border-white/10 bg-black/20 p-5">
+              <Zap className="size-5 text-amber-300" />
+              <p className="mt-4 text-sm text-white/50">Daily XP</p>
               <p className="mt-2 font-mono text-4xl text-white">
-                {dashboard.settings.codingTargetProblems}
+                {dashboard.progressionSummary.todayXp}
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-              <BookOpen className="size-5 text-amber-300" />
-              <p className="mt-4 text-sm text-white/50">Learning Target</p>
+            <div className="rounded-[26px] border border-white/10 bg-black/20 p-5">
+              <Orbit className="size-5 text-amber-300" />
+              <p className="mt-4 text-sm text-white/50">Boss Reward</p>
               <p className="mt-2 font-mono text-4xl text-white">
-                {dashboard.settings.learningTargetMinutes}
+                {dashboard.weeklyBossBoard.rewardXp}
               </p>
             </div>
           </div>
@@ -265,14 +164,19 @@ export default async function DashboardPage() {
                   className="rounded-[28px] border border-white/10 bg-black/20 p-5"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/35">
+                        Tactical progress
+                      </p>
+                    </div>
                     <span className="font-mono text-sm text-white/55">
                       {project.progressPercent}%
                     </span>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
                     <div
-                      className="h-full rounded-full bg-amber-400"
+                      className="h-full rounded-full bg-gradient-to-r from-amber-400 via-cyan-300 to-emerald-400"
                       style={{ width: `${project.progressPercent}%` }}
                     />
                   </div>
@@ -283,34 +187,15 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      <AchievementGallery
+        gallery={dashboard.achievementGallery}
+        recentUnlocks={dashboard.recentUnlocks}
+      />
+
       <AccountabilityBoard
         key={dashboard.accountabilityHistory.days.at(-1)?.date ?? "accountability"}
         history={dashboard.accountabilityHistory}
       />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="surface p-5">
-          <Code2 className="size-5 text-amber-300" />
-          <p className="mt-4 text-sm text-white/50">Coding Logged</p>
-          <p className="mt-2 font-mono text-4xl text-white">
-            {dashboard.todayLog.codingProblemsSolved}
-          </p>
-        </div>
-        <div className="surface p-5">
-          <BookOpen className="size-5 text-amber-300" />
-          <p className="mt-4 text-sm text-white/50">Learning Logged</p>
-          <p className="mt-2 font-mono text-4xl text-white">
-            {dashboard.todayLog.learningMinutes}
-          </p>
-        </div>
-        <div className="surface p-5">
-          <Dumbbell className="size-5 text-amber-300" />
-          <p className="mt-4 text-sm text-white/50">Workout Status</p>
-          <p className="mt-2 text-2xl font-semibold text-white">
-            {dashboard.todayLog.workoutDone ? "Done" : "Missed"}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

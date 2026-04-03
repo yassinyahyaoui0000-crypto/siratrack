@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 
 import { PRAYER_FIELDS } from "@/lib/constants";
+import { calculateDailyXp } from "@/lib/progression";
 import { calculateDailyScore } from "@/lib/scoring";
 import type { AppSettings, DailyLog, DailyLogInput, DayRating } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,13 @@ export function DailyCheckInForm({
   const [hasAppliedFocusSuggestion, setHasAppliedFocusSuggestion] = useState(false);
 
   const preview = calculateDailyScore(form, settings);
+  const xpPreview = calculateDailyXp(
+    {
+      ...form,
+      focusSessionsCompleted: initialLog.focusSessionsCompleted,
+    },
+    settings,
+  );
   const focusMinutes = initialLog.focusSessionsCompleted * 25;
   const focusHoursLabel = Math.floor(focusMinutes / 60);
   const focusMinutesLabel = focusMinutes % 60;
@@ -106,7 +114,7 @@ export function DailyCheckInForm({
       return;
     }
 
-    setSuccess("Today's check-in is saved.");
+    setSuccess(`+${xpPreview.totalXpEarned} XP locked for today.`);
     startTransition(() => {
       router.refresh();
     });
@@ -126,12 +134,21 @@ export function DailyCheckInForm({
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-[24px] border border-white/10 bg-black/20 px-5 py-4">
             <p className="section-label">Live Score</p>
             <p className="mt-2 font-mono text-4xl font-semibold text-white">
               {preview.score}
               <span className="text-lg text-white/35">/100</span>
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-white/10 bg-black/20 px-5 py-4">
+            <p className="section-label">Live XP</p>
+            <p className="mt-2 font-mono text-4xl font-semibold text-white">
+              {xpPreview.totalXpEarned}
+            </p>
+            <p className="mt-3 text-xs uppercase tracking-[0.18em] text-white/35">
+              {xpPreview.baseXp} base + {xpPreview.fullCompletionBonusXp} clean + {xpPreview.focusBonusXp} focus
             </p>
           </div>
           <div

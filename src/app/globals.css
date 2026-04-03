@@ -13,6 +13,7 @@
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #fb7185;
+  --secondary: #5eead4;
 }
 
 @theme inline {
@@ -28,6 +29,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-secondary: var(--secondary);
   --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
 }
@@ -62,6 +64,14 @@
 }
 
 @layer components {
+  .scan-grid {
+    background-image:
+      linear-gradient(rgba(94, 234, 212, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(94, 234, 212, 0.045) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 90%);
+  }
+
   .surface {
     @apply rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-sm;
     box-shadow:
@@ -103,5 +113,107 @@
 
   .status-bad {
     @apply border border-rose-400/30 bg-rose-400/10 text-rose-200;
+  }
+
+  .hud-shell {
+    @apply rounded-[36px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(94,234,212,0.12),transparent_28%),rgba(255,255,255,0.04)] backdrop-blur-sm;
+    box-shadow:
+      0 24px 80px rgba(0, 0, 0, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .hud-stat {
+    @apply rounded-[24px] border border-white/10 bg-black/20 p-4;
+  }
+
+  .rank-pill {
+    @apply inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.09] px-4 py-2 text-xs font-semibold uppercase tracking-[0.26em] text-cyan-100;
+  }
+
+  .tactical-chip {
+    @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/60;
+  }
+
+  .xp-track {
+    @apply h-3 overflow-hidden rounded-full border border-white/10 bg-black/30;
+  }
+
+  .xp-fill {
+    @apply h-full rounded-full bg-[linear-gradient(90deg,#f59e0b_0%,#5eead4_50%,#34d399_100%)];
+    box-shadow: 0 0 24px rgba(94, 234, 212, 0.35);
+    animation: xp-surge 1.1s ease-out;
+  }
+
+  .mission-tile {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 14px 34px rgba(0, 0, 0, 0.2);
+  }
+
+  .mission-tile-complete {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 14px 34px rgba(16, 185, 129, 0.08);
+  }
+
+  .achievement-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .achievement-card-recent::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.02) 36%,
+      rgba(94, 234, 212, 0.14) 50%,
+      rgba(255, 255, 255, 0.02) 64%,
+      transparent 100%
+    );
+    transform: translateX(-120%);
+    animation: achievement-scan 3.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .motion-pulse-ember {
+    animation: ember-pulse 2.2s ease-in-out infinite;
+  }
+}
+
+@keyframes xp-surge {
+  0% {
+    opacity: 0.3;
+    transform: scaleX(0.92);
+    transform-origin: left center;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes achievement-scan {
+  0% {
+    transform: translateX(-120%);
+  }
+  45%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes ember-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 }

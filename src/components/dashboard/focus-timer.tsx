@@ -177,13 +177,16 @@ export function FocusTimer({ initialCompletedSessions }: FocusTimerProps) {
     <div className="surface p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="section-label">Focus Timer</p>
+          <p className="section-label">Focus Chain</p>
           <h3 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-            {mode === "focus" ? "25 Minute Focus" : "5 Minute Break"}
+            {mode === "focus" ? "25 Minute Focus Run" : "5 Minute Reset"}
           </h3>
           <p className="mt-2 text-sm text-white/55">
             Completed focus sessions today:{" "}
             <span className="font-mono text-white">{completedSessions}</span>
+          </p>
+          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/35">
+            Each session adds +10 XP up to +60 per day
           </p>
         </div>
         <div className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.24em] text-white/50">
@@ -198,7 +201,7 @@ export function FocusTimer({ initialCompletedSessions }: FocusTimerProps) {
           </p>
           <p className="mt-3 flex items-center gap-2 text-sm text-white/45">
             <TimerReset className="size-4" />
-            The timer survives refreshes on this device.
+            Chain state survives refreshes on this device.
           </p>
         </div>
 

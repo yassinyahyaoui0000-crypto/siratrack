@@ -58,7 +58,7 @@ export function WeeklyScoreChart({ entries }: WeeklyScoreChartProps) {
             ]}
             labelFormatter={(_, payload) => {
               const point = payload?.[0]?.payload as WeeklyScoreEntry | undefined;
-              return point ? `${point.dayLabel} • ${point.shortDateLabel}` : "";
+              return point ? `${point.dayLabel} - ${point.shortDateLabel}` : "";
             }}
           />
           <Bar dataKey="score" radius={[16, 16, 0, 0]}>

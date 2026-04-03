@@ -1,5 +1,12 @@
 export type DayRating = "GOOD" | "AVERAGE" | "BAD";
 export type WeeklyCommitmentStatus = "ON TRACK" | "OFF TRACK";
+export type RankTitle =
+  | "Recruit"
+  | "Operator"
+  | "Builder"
+  | "Vanguard"
+  | "Executor"
+  | "Ironmind";
 export type RecoveryPlanMissReason =
   | "planning"
   | "distraction"
@@ -24,6 +31,19 @@ export type HabitKey =
   | "learning"
   | "workout"
   | "prayers";
+export type DailyMissionKey =
+  | HabitKey
+  | "perfectStandard"
+  | "focusChain";
+export type AchievementKey =
+  | "firstLog"
+  | "cleanDay"
+  | "threeDayChain"
+  | "sevenDayChain"
+  | "focusTen"
+  | "weekCleared"
+  | "noMissWeek"
+  | "recoveryBounce";
 
 export interface AppSettings {
   userId?: string;
@@ -133,6 +153,14 @@ export interface WeeklyCommitmentProgress {
   metrics: WeeklyCommitmentMetricProgress[];
 }
 
+export interface DailyXpResult {
+  totalXpEarned: number;
+  baseXp: number;
+  fullCompletionBonusXp: number;
+  focusBonusXp: number;
+  fullCompletion: boolean;
+}
+
 export interface RecoveryPlanInput {
   triggerDate: string;
   targetDate: string;
@@ -235,6 +263,62 @@ export interface AccountabilityHistory {
   summary: AccountabilityHistorySummary;
 }
 
+export interface ProgressionSummary {
+  totalXp: number;
+  totalDailyXp: number;
+  totalWeeklyBossXp: number;
+  todayXp: number;
+  level: number;
+  rankTitle: RankTitle;
+  xpIntoLevel: number;
+  xpForCurrentLevel: number;
+  xpForNextLevel: number;
+  progressPercent: number;
+  weeklyBossClears: number;
+  unlockedAchievementCount: number;
+}
+
+export interface DailyMission {
+  key: DailyMissionKey;
+  label: string;
+  description: string;
+  statusLabel: string;
+  isComplete: boolean;
+  rewardXp: number;
+}
+
+export interface DailyMissionBoard {
+  missions: DailyMission[];
+  completedCount: number;
+  totalCount: number;
+}
+
+export interface WeeklyBossBoard {
+  hasCommitment: boolean;
+  status: WeeklyCommitmentStatus | null;
+  rewardXp: number;
+  warning: boolean;
+  weekStart: string;
+  elapsedDays: number;
+  primaryProjectName: string | null;
+  note: string;
+  metrics: WeeklyCommitmentMetricProgress[];
+}
+
+export interface Achievement {
+  key: AchievementKey;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface AchievementGallery {
+  achievements: Achievement[];
+  unlockedCount: number;
+  totalCount: number;
+}
+
 export interface DashboardData {
   userEmail: string;
   settings: AppSettings;
@@ -250,4 +334,9 @@ export interface DashboardData {
   accountabilityHistory: AccountabilityHistory;
   activeProjects: Project[];
   focusDerivedHours: number;
+  progressionSummary: ProgressionSummary;
+  dailyMissionBoard: DailyMissionBoard;
+  weeklyBossBoard: WeeklyBossBoard;
+  achievementGallery: AchievementGallery;
+  recentUnlocks: Achievement[];
 }
