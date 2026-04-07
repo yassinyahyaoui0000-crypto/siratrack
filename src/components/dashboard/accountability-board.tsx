@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { RECOVERY_REASON_OPTIONS } from "@/lib/constants";
 import type { AccountabilityHistory, AccountabilityDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,14 @@ function DetailRow({
   );
 }
 
+function getMissReasonLabel(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  return RECOVERY_REASON_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
 export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(
     history.days.at(-1)?.date ?? null,
@@ -70,25 +79,25 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/50">Strong Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.goodDays}</p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/50">Failed Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.badDays}</p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/50">Silent Days</p>
           <p className="mt-2 font-mono text-3xl text-white">{history.summary.missedDays}</p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/50">Best Chain</p>
           <p className="mt-2 font-mono text-3xl text-white">
             {history.summary.longestFullStreak}
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/50">Weakest Area</p>
           <p className="mt-2 text-lg font-semibold text-white">
             {history.summary.mostMissedCategory
@@ -120,7 +129,7 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
                 getCellClassName(day, selectedDate),
               )}
             >
-              <p className="section-label !text-current/70">{day.dayLabel}</p>
+              <p className="section-label text-current/70!">{day.dayLabel}</p>
               <p className="mt-2 text-sm font-semibold text-white">{day.shortDateLabel}</p>
               <p className="mt-3 font-mono text-lg text-white">
                 {day.score ?? "--"}
@@ -189,6 +198,23 @@ export function AccountabilityBoard({ history }: AccountabilityBoardProps) {
                     <p className="mt-2 text-sm leading-6 text-white/75">
                       {selectedDay.log.reflection || "No reflection recorded."}
                     </p>
+                  </div>
+                  <div className="mt-4 rounded-[22px] border border-white/10 bg-black/20 p-4">
+                    <p className="section-label">Slip Context</p>
+                    {selectedDay.log.missReason || selectedDay.log.missNote ? (
+                      <div className="mt-2 space-y-2 text-sm leading-6 text-white/75">
+                        <p>
+                          {selectedDay.log.missReason
+                            ? getMissReasonLabel(selectedDay.log.missReason)
+                            : "No slip reason selected."}
+                        </p>
+                        <p>{selectedDay.log.missNote || "No slip note recorded."}</p>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm leading-6 text-white/55">
+                        No slip context recorded for this day.
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (

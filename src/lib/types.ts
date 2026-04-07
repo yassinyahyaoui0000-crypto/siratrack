@@ -79,6 +79,8 @@ export interface DailyLogInput {
   maghribDone: boolean;
   ishaDone: boolean;
   reflection: string;
+  missReason: RecoveryPlanMissReason | null;
+  missNote: string;
 }
 
 export interface DailyLog extends DailyLogInput {

@@ -18,6 +18,18 @@ export const dailyLogSchema = z.object({
   maghribDone: z.boolean(),
   ishaDone: z.boolean(),
   reflection: z.string().trim().max(200).default(""),
+  missReason: z
+    .enum([
+      "planning",
+      "distraction",
+      "fatigue",
+      "avoidance",
+      "overcommitment",
+      "other",
+    ])
+    .nullable()
+    .default(null),
+  missNote: z.string().trim().max(200).default(""),
 });
 
 export const settingsSchema = z.object({

@@ -43,6 +43,8 @@ describe("GET /api/export/daily-logs", () => {
         ishaDone: true,
         focusSessionsCompleted: 2,
         reflection: "Stayed honest.",
+        missReason: null,
+        missNote: "",
         dailyScore: 100,
         dayRating: "GOOD",
       },
@@ -57,6 +59,7 @@ describe("GET /api/export/daily-logs", () => {
     expect(csv).toContain(
       "log_date,deep_work_hours,coding_problems_solved,project_work_done",
     );
+    expect(csv).toContain("miss_reason,miss_note");
     expect(csv).toContain("2026-04-03");
   });
 });

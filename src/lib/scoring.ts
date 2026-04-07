@@ -31,6 +31,8 @@ export function createEmptyDailyLog(logDate: string): DailyLog {
     ishaDone: false,
     focusSessionsCompleted: 0,
     reflection: "",
+    missReason: null,
+    missNote: "",
     dailyScore: 0,
     dayRating: "BAD",
   };
@@ -50,6 +52,8 @@ export function normalizeDailyLogInput(input: Partial<DailyLogInput>): DailyLogI
     maghribDone: input.maghribDone ?? false,
     ishaDone: input.ishaDone ?? false,
     reflection: input.reflection?.trim() ?? "",
+    missReason: input.missReason ?? null,
+    missNote: input.missNote?.trim() ?? "",
   };
 }
 

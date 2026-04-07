@@ -39,6 +39,8 @@ create table if not exists public.daily_logs (
   isha_done boolean not null default false,
   focus_sessions_completed integer not null default 0 check (focus_sessions_completed >= 0),
   reflection varchar(200),
+  miss_reason varchar(20) check (miss_reason in ('planning', 'distraction', 'fatigue', 'avoidance', 'overcommitment', 'other')),
+  miss_note varchar(200),
   daily_score integer not null default 0 check (daily_score between 0 and 100),
   day_rating varchar(8) not null default 'BAD' check (day_rating in ('GOOD', 'AVERAGE', 'BAD')),
   created_at timestamptz not null default timezone('utc', now()),

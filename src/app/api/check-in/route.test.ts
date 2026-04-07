@@ -33,6 +33,8 @@ const validBody = {
   maghribDone: true,
   ishaDone: true,
   reflection: "Solid day.",
+  missReason: null,
+  missNote: "",
 };
 
 describe("check-in routes", () => {

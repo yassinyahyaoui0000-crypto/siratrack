@@ -13,6 +13,8 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+type WeeklyPreset = "normal" | "recovery" | "sprint";
+
 interface WeeklyCommitmentCardProps {
   initialCommitment: WeeklyCommitment | null;
   initialProgress: WeeklyCommitmentProgress | null;
@@ -30,6 +32,45 @@ function createDefaultWeeklyCommitment(settings: AppSettings): WeeklyCommitmentI
     fullPrayerDaysGoal: settings.requireAllPrayers ? 7 : 0,
     primaryProjectId: null,
     commitmentNote: "",
+  };
+}
+
+function buildWeeklyPreset(
+  preset: WeeklyPreset,
+  settings: AppSettings,
+  projects: Project[],
+  currentSelection: WeeklyCommitmentInput,
+): WeeklyCommitmentInput {
+  const defaultTargets = createDefaultWeeklyCommitment(settings);
+
+  if (preset === "normal") {
+    return {
+      ...defaultTargets,
+      primaryProjectId: currentSelection.primaryProjectId,
+    };
+  }
+
+  if (preset === "recovery") {
+    return {
+      deepWorkHoursGoal: Number((defaultTargets.deepWorkHoursGoal * 0.6).toFixed(1)),
+      codingProblemsGoal: Math.max(1, Math.round(defaultTargets.codingProblemsGoal * 0.6)),
+      learningMinutesGoal: Math.max(30, Math.round(defaultTargets.learningMinutesGoal * 0.6)),
+      workoutDaysGoal: settings.requireWorkout ? 4 : 2,
+      fullPrayerDaysGoal: settings.requireAllPrayers ? 7 : 4,
+      primaryProjectId: currentSelection.primaryProjectId,
+      commitmentNote: "Recovery week: protect the floor, reduce drift, and keep the log clean.",
+    };
+  }
+
+  return {
+    deepWorkHoursGoal: Number((defaultTargets.deepWorkHoursGoal * 1.25).toFixed(1)),
+    codingProblemsGoal: Math.max(1, Math.round(defaultTargets.codingProblemsGoal * 1.25)),
+    learningMinutesGoal: Math.round(defaultTargets.learningMinutesGoal * 1.25),
+    workoutDaysGoal: settings.requireWorkout ? 7 : 5,
+    fullPrayerDaysGoal: settings.requireAllPrayers ? 7 : 5,
+    primaryProjectId:
+      currentSelection.primaryProjectId ?? projects.find((project) => project.isActive)?.id ?? null,
+    commitmentNote: "Sprint week: push one target hard and accept a narrower focus.",
   };
 }
 
@@ -71,6 +112,10 @@ export function WeeklyCommitmentCard({
     () => createDefaultWeeklyCommitment(settings),
     [settings],
   );
+
+  function applyPreset(preset: WeeklyPreset) {
+    setForm((current) => buildWeeklyPreset(preset, settings, projects, current));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -135,6 +180,31 @@ export function WeeklyCommitmentCard({
         </div>
       </div>
 
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <span className="section-label">Presets</span>
+        <button
+          type="button"
+          onClick={() => applyPreset("normal")}
+          className="action-button-secondary rounded-full! px-4! py-2! text-xs!"
+        >
+          Normal Week
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("recovery")}
+          className="action-button-secondary rounded-full! px-4! py-2! text-xs!"
+        >
+          Recovery Week
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("sprint")}
+          className="action-button-secondary rounded-full! px-4! py-2! text-xs!"
+        >
+          Sprint Week
+        </button>
+      </div>
+
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
           <p className="text-sm text-white/45">Primary Project</p>
@@ -155,7 +225,7 @@ export function WeeklyCommitmentCard({
       </div>
 
       {weeklyBossBoard.warning ? (
-        <div className="mt-4 rounded-[22px] border border-amber-300/20 bg-amber-300/[0.08] px-4 py-3 text-sm text-amber-100">
+        <div className="mt-4 rounded-[22px] border border-amber-300/20 bg-amber-300/8 px-4 py-3 text-sm text-amber-100">
           Monday is live and the Week Boss is still unset. Lock the objective before drift starts.
         </div>
       ) : null}
@@ -315,7 +385,7 @@ export function WeeklyCommitmentCard({
           {initialProgress.metrics.map((metric) => (
             <div
               key={metric.key}
-              className="rounded-[24px] border border-white/10 bg-black/20 p-4"
+              className="rounded-3xl border border-white/10 bg-black/20 p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-white">{metric.label}</p>

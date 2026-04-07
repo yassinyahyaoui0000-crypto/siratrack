@@ -56,6 +56,7 @@ export const RECOVERY_REASON_OPTIONS: Array<{
 
 export const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/review", label: "Review" },
   { href: "/projects", label: "Projects" },
   { href: "/settings", label: "Settings" },
 ];

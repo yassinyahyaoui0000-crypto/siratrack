@@ -29,6 +29,8 @@ function fromDailyLogRow(row: Record<string, unknown>): DailyLog {
     ishaDone: Boolean(row.isha_done),
     focusSessionsCompleted: Number(row.focus_sessions_completed),
     reflection: String(row.reflection ?? ""),
+    missReason: (row.miss_reason as DailyLog["missReason"]) ?? null,
+    missNote: String(row.miss_note ?? ""),
     dailyScore: Number(row.daily_score),
     dayRating: String(row.day_rating) as DailyLog["dayRating"],
     createdAt: String(row.created_at),
@@ -53,6 +55,8 @@ function toDailyLogRow(userId: string, log: DailyLog) {
     isha_done: log.ishaDone,
     focus_sessions_completed: log.focusSessionsCompleted,
     reflection: log.reflection || null,
+    miss_reason: log.missReason,
+    miss_note: log.missNote || null,
     daily_score: log.dailyScore,
     day_rating: log.dayRating,
   };
@@ -102,6 +106,8 @@ function mergeTodayLog(
     logDate,
     projectNotes: input.projectWorkDone ? input.projectNotes : "",
     reflection: input.reflection,
+    missReason: input.missReason,
+    missNote: input.missNote,
   };
 }
 

@@ -4,10 +4,16 @@ import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 
-import { PRAYER_FIELDS } from "@/lib/constants";
+import { PRAYER_FIELDS, RECOVERY_REASON_OPTIONS } from "@/lib/constants";
 import { calculateDailyXp } from "@/lib/progression";
 import { calculateDailyScore } from "@/lib/scoring";
-import type { AppSettings, DailyLog, DailyLogInput, DayRating } from "@/lib/types";
+import type {
+  AppSettings,
+  DailyLog,
+  DailyLogInput,
+  DayRating,
+  RecoveryPlanMissReason,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface DailyCheckInFormProps {
@@ -31,6 +37,8 @@ function extractInput(log: DailyLog): DailyLogInput {
     maghribDone: log.maghribDone,
     ishaDone: log.ishaDone,
     reflection: log.reflection,
+    missReason: log.missReason,
+    missNote: log.missNote,
   };
 }
 
@@ -87,6 +95,13 @@ export function DailyCheckInForm({
     setForm((current) => ({
       ...current,
       [key]: value,
+    }));
+  }
+
+  function setMissReason(value: RecoveryPlanMissReason | "") {
+    setForm((current) => ({
+      ...current,
+      missReason: value === "" ? null : value,
     }));
   }
 
@@ -315,6 +330,56 @@ export function DailyCheckInForm({
             className="field min-h-28 resize-none"
             placeholder="One honest sentence about the day."
           />
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <p className="section-label">Slip Context</p>
+          <span className="text-xs uppercase tracking-[0.18em] text-white/35">
+            Optional, most useful on weak days
+          </span>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+          <div className="space-y-2">
+            <label className="section-label" htmlFor="miss-reason">
+              Why did the day slip?
+            </label>
+            <select
+              id="miss-reason"
+              value={form.missReason ?? ""}
+              onChange={(event) =>
+                setMissReason(event.target.value as RecoveryPlanMissReason | "")
+              }
+              className="field"
+            >
+              <option value="">No slip / not needed</option>
+              {RECOVERY_REASON_OPTIONS.map((reason) => (
+                <option key={reason.value} value={reason.value}>
+                  {reason.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="section-label" htmlFor="miss-note">
+              Slip Note
+            </label>
+            <textarea
+              id="miss-note"
+              value={form.missNote}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  missNote: event.target.value,
+                }))
+              }
+              rows={3}
+              className="field min-h-28 resize-none"
+              placeholder="One short note about what went wrong or what needs to change."
+            />
+          </div>
         </div>
       </div>
 
